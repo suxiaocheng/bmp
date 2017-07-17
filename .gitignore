@@ -1,0 +1,7 @@
+*.tmp
+*.o
+*.bmp
+*.depend
+*~
+sf/
+out/
