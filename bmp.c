@@ -3,50 +3,31 @@
 #include <string.h>
 #include "bmp.h"
 
-void SaveImage(char *file,unsigned char* bmp,int w ,int h)  
+void save_image(char *file,unsigned char* bmp,int w ,int h)  
 {  
-    int i = 0;  
-    char color = 0;  
-    char end[2] = {0,0};  
-    char patte[1024] = {0};  
-    int pos = 0;  
-  
-    unsigned char heard[54] = {0x42,0x4d,0x30,0x0C,0x01,0,0,0,0,0,0x36,4,
-    	0,0,0x28,0,0,0,0xF5,0,0,0,0x46,0,0,0,0x01,0,8,0,0,0,0,0,0xF8,
-    	0x0b,0x01,0,0x12,0x0b,0,0,0x12,0x0b,0,0,0,0,0,0,0,0,0,0};  
-    int size = w*h;  
-    int allsize = size +1080;  
-  
-    heard[2] = allsize&0xFF;  
-    heard[3] = (allsize>>8)&0xFF;  
-    heard[4] = (allsize>>16)&0xFF;  
-    heard[5] = (allsize>>24)&0xFF;  
-  
-    heard[18] = w&0xFF;  
-    heard[19] = (w>>8)&0xFF;  
-    heard[20] = (w>>16)&0xFF;  
-    heard[21] = (w>>24)&0xFF;  
-  
-    heard[22] = h&0xFF;  
-    heard[23] = (h>>8)&0xFF;  
-    heard[24] = (h>>16)&0xFF;  
-    heard[25] = (h>>24)&0xFF;  
-  
-    allsize -=1078;  
-    heard[34] = allsize&0xFF;  
-    heard[35] = (allsize>>8)&0xFF;  
-    heard[36] = (allsize>>16)&0xFF;  
-    heard[37] = (allsize>>24)&0xFF;  
-  
-    for(i=0;i<1024;i+=4)  
-    {  
-        patte[pos++] = color;  
-        patte[pos++] = color;  
-        patte[pos++] = color;  
-        patte[pos++] = 0;  
-        color++;  
-    }  
-  
+    BITMAPFILEHEADER file_header;
+    BITMAPINFODEADER info_header;
+    
+    memset(&file_header, 0x0, sizeof(BITMAPFILEHEADER));
+    memset(&info_header, 0x0, sizeof(BITMAPINFODEADER));
+    
+    /* Init BITMAPFILEHEADER */
+    ((unsigned char *)&file_header.bfType)[0] = 0x42;
+    ((unsigned char *)&file_header.bfType)[1] = 0x4d;
+    
+    file_header.bfSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFODEADER) 
+    	+ 3*w*h;
+    file_header.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFODEADER);
+    
+    /* Init BITMAPINFODEADER */
+    info_header.biSize = 40;
+    info_header.biWidth = w;
+    info_header.biHeight = h;
+    info_header.biPlanes = 1;
+    info_header.biBitCount = 24;
+    info_header.biXPelsPerMeter = 0x120b;
+    info_header.biYPelsPerMeter = 0x120b;
+    
     FILE* fd = NULL;  
   
     fd = fopen(file,"wb+");  
@@ -56,10 +37,9 @@ void SaveImage(char *file,unsigned char* bmp,int w ,int h)
     }  
     else  
     {  
-        fwrite(heard,54,1,fd);  
-        fwrite(patte,1024,1,fd);  
-        fwrite(bmp,size,1,fd);  
-        fwrite(end,2,1,fd);  
+        fwrite(&file_header,sizeof(file_header),1,fd);
+        fwrite(&info_header,sizeof(info_header),1,fd);  
+        fwrite(bmp,3*w*h,1,fd);
     }  
     fclose(fd);  
 }
@@ -74,7 +54,7 @@ int main(int argc, char **argv)
 	buf = malloc(IMAGE_HEIGHT*IMAGE_WIDTH*3);
 	memset((void *)buf, 0xaa, IMAGE_HEIGHT*IMAGE_WIDTH*3);
 	
-	SaveImage("tmp.bmp", buf, IMAGE_WIDTH, IMAGE_HEIGHT);
+	save_image("tmp.bmp", buf, IMAGE_WIDTH, IMAGE_HEIGHT);
 	
 	return 0;
 }
